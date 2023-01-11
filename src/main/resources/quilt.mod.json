@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "quilt_loader": {
+    "group": "com.hiarias",
+    "id": "just_teleport",
+    "version": "${version}",
+    "metadata": {
+      "name": "Just Teleport",
+      "description": "A server-side mod provides tp commands.",
+      "contributors": {
+        "Ariaszzzhc": "Owner"
+      },
+      "contact": {
+        "homepage": "https://example.com/",
+        "issues": "https://github.com/QuiltMC/quilt-kotlin-template-mod/issues",
+        "sources": "https://github.com/QuiltMC/quilt-kotlin-template-mod"
+      },
+      "icon": "assets/just_teleport/icon.png"
+    },
+    "intermediate_mappings": "net.fabricmc:intermediary",
+    "entrypoints": {
+      "init": {
+        "adapter": "kotlin",
+        "value": "com.hiarias.just_teleport.JustTeleportMod"
+      }
+    },
+    "depends": [
+      {
+        "id": "quilt_loader",
+        "versions": ">=0.17.0-"
+      },
+      {
+        "id": "quilted_fabric_api",
+        "versions": ">=4.0.0-"
+      },
+      {
+        "id": "qkl",
+        "versions": ">=0.1.4-"
+      },
+      {
+        "id": "minecraft",
+        "versions": ">=1.19.2"
+      }
+    ]
+  }
+}
