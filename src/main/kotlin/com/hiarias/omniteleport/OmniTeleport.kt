@@ -2,9 +2,12 @@ package com.hiarias.omniteleport
 
 import com.hiarias.omniteleport.util.PermUtils
 import com.hiarias.omniteleport.util.isPlayer
+import com.mojang.brigadier.context.CommandContext
 import net.minecraft.command.argument.EntityArgumentType
 import net.minecraft.entity.ai.brain.Schedule
 import net.minecraft.server.command.CommandManager
+import net.minecraft.server.command.ServerCommandSource
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.Text
 import net.minecraft.util.Formatting
 import org.quiltmc.loader.api.ModContainer
@@ -35,73 +38,96 @@ object OmniTeleport : ModInitializer {
                 CommandManager.literal("tpa").requires(::isPlayer)
                     .requires(PermUtils.require("omniteleport.tpa", true))
                     .then(CommandManager.argument("target", EntityArgumentType.player())
-                    .executes { context ->
-                        val player = context.source.player!!
-                        val target = EntityArgumentType.getPlayer(context, "target")
+                        .executes { context ->
+                            val player = context.source.player!!
+                            val target = EntityArgumentType.getPlayer(context, "target")
 
-                        // check player
-                        if (player == target) {
+                            // check player
+                            if (player == target) {
+                                target.sendMessage(
+                                    Text.literal("You cannot request for you to teleport to yourself!")
+                                        .formatted(Formatting.RED), false
+                                )
+                            }
+
+                            if (activeRequests.any {
+                                    it.initiator == player
+                                }) {
+                                player.sendMessage(
+                                    Text.literal("There is already an ongoing request like this!")
+                                        .formatted(Formatting.RED), false
+                                )
+
+                                return@executes 1
+                            }
+
+                            val request = TeleportRequest(player, target, player)
+                            activeRequests.add(request)
+                            Scheduler.scheduleDelayedTask(100) {
+                                activeRequests.remove(request)
+
+                                request.run {
+                                    initiator.sendMessage(
+                                        Text.literal("Your teleport request to ").formatted(Formatting.RED).append(
+                                            Text.literal(destination.entityName).formatted(Formatting.GREEN)
+                                        ).append(
+                                            Text.literal(" has timed out!")
+                                                .formatted(Formatting.RED)
+                                        ), false
+                                    )
+
+                                    destination.sendMessage(
+                                        Text.literal("Teleport request from ").formatted(Formatting.RED)
+                                            .append(Text.literal(source.entityName).formatted(Formatting.GREEN)).append(
+                                                Text.literal(" has timed out!")
+                                                    .formatted(Formatting.RED)
+                                            ), false
+                                    )
+                                }
+                            }
+
                             target.sendMessage(
-                                Text.literal("You cannot request for you to teleport to yourself!")
-                                    .formatted(Formatting.RED), false
+                                Text.literal(player.name.string).formatted(Formatting.GREEN).append(
+                                    Text.literal(" has requested to teleport to you. Type ").formatted(Formatting.GOLD)
+                                ).append(
+                                    Text.literal("/tpaccept").formatted(Formatting.YELLOW)
+                                ).append(Text.literal(" to accept.").formatted(Formatting.GOLD)), false
                             )
-                        }
-
-                        // TODO: cold down check
-
-                        if (activeRequests.any {
-                                it.initiator == player
-                            }) {
                             player.sendMessage(
-                                Text.literal("There is already an ongoing request like this!")
-                                    .formatted(Formatting.RED), false
+                                Text.literal("Requested to teleport to ").formatted(Formatting.GOLD)
+                                    .append(Text.literal(target.name.string).formatted(Formatting.GREEN))
+                                    .append(Text.literal(".").formatted(Formatting.GOLD)), false
                             )
 
                             return@executes 1
                         }
-
-                        val request = TeleportRequest(player, target, player)
-                        activeRequests.add(request)
-                        Scheduler.scheduleDelayedTask(100) {
-                            activeRequests.remove(request)
-                            request.initiator.sendMessage(
-                                Text.literal("Your teleport request to " + request.destination.entityName + " has timed out!")
-                                    .formatted(Formatting.RED), false
-                            )
-                            request.destination.sendMessage(
-                                Text.literal("Teleport request from " + request.source.entityName + " has timed out!")
-                                    .formatted(Formatting.RED), false
-                            )
-                        }
-
-                        target.sendMessage(
-                            Text.literal(player.name.string).formatted(Formatting.GREEN).append(
-                                Text.literal(" has requested to teleport to you. Type ").formatted(Formatting.GOLD)
-                            ).append(
-                                Text.literal("/tpaccept").formatted(Formatting.YELLOW)
-                            ).append(Text.literal(" to accept.").formatted(Formatting.GOLD)), false
-                        )
-                        player.sendMessage(
-                            Text.literal("Requested to teleport to ").formatted(Formatting.GOLD)
-                                .append(Text.literal(target.name.string).formatted(Formatting.GREEN))
-                                .append(Text.literal(".").formatted(Formatting.GOLD)), false
-                        )
-
-                        return@executes 1
-                    }
-            ))
+                    ))
 
 
             // tpaccept
             dispatcher.register(
                 CommandManager.literal("tpaccept").requires(::isPlayer)
                     .requires(PermUtils.require("omniteleport.tpaccept", true))
-                    .executes { context ->
+                    .then(CommandManager.argument("target", EntityArgumentType.player())
+                        .executes { context ->
+                            val player = context.source.player!!
+                            val target = EntityArgumentType.getPlayer(context, "target")
 
+
+
+                            return@executes 1
+                        }
+                    ).executes {
 
                         return@executes 1
                     }
             )
         }
     }
+
+//    private fun tpAccept(context: CommandContext<ServerCommandSource>, target: ServerPlayerEntity?) {
+//        if (target != null) {
+//
+//        }
+//    }
 }
