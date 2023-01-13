@@ -1,4 +1,4 @@
-package com.hiarias.just_teleport.util
+package com.hiarias.omniteleport.util
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import net.minecraft.server.command.ServerCommandSource

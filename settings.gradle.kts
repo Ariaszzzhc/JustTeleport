@@ -15,4 +15,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "JustTeleport"
+rootProject.name = "OmniTeleport"

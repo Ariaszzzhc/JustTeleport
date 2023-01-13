@@ -1,34 +1,42 @@
-package com.hiarias.just_teleport
+package com.hiarias.omniteleport
 
-import com.hiarias.just_teleport.util.PermUtils
-import com.hiarias.just_teleport.util.isPlayer
+import com.hiarias.omniteleport.util.PermUtils
+import com.hiarias.omniteleport.util.isPlayer
 import net.minecraft.command.argument.EntityArgumentType
+import net.minecraft.entity.ai.brain.Schedule
 import net.minecraft.server.command.CommandManager
 import net.minecraft.text.Text
 import net.minecraft.util.Formatting
 import org.quiltmc.loader.api.ModContainer
-import org.quiltmc.qkl.library.brigadier.execute
-import org.quiltmc.qkl.library.brigadier.register
 import org.quiltmc.qsl.base.api.entrypoint.ModInitializer
 import org.quiltmc.qsl.command.api.CommandRegistrationCallback
+import org.quiltmc.qsl.lifecycle.api.event.ServerTickEvents
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.LinkedList
 
-object JustTeleportMod : ModInitializer {
+object OmniTeleport : ModInitializer {
     val LOGGER: Logger = LoggerFactory.getLogger("JustTeleport Mod")
+
+    private val activeRequests = LinkedList<TeleportRequest>()
 
     override fun onInitialize(mod: ModContainer) {
         LOGGER.info("Hello Quilt world from {}!", mod.metadata()?.name())
+
+        ServerTickEvents.START.register { server ->
+            Scheduler.saveServerTick(server)
+
+            Scheduler.schedule()
+        }
 
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
             // tpa
             dispatcher.register(
                 CommandManager.literal("tpa").requires(::isPlayer)
-                    .requires(PermUtils.require("just_teleport.tpa", true))
-                    .then(CommandManager.argument("target", EntityArgumentType.player()))
+                    .requires(PermUtils.require("omniteleport.tpa", true))
+                    .then(CommandManager.argument("target", EntityArgumentType.player())
                     .executes { context ->
                         val player = context.source.player!!
-//                        val server = player.server
                         val target = EntityArgumentType.getPlayer(context, "target")
 
                         // check player
@@ -40,6 +48,31 @@ object JustTeleportMod : ModInitializer {
                         }
 
                         // TODO: cold down check
+
+                        if (activeRequests.any {
+                                it.initiator == player
+                            }) {
+                            player.sendMessage(
+                                Text.literal("There is already an ongoing request like this!")
+                                    .formatted(Formatting.RED), false
+                            )
+
+                            return@executes 1
+                        }
+
+                        val request = TeleportRequest(player, target, player)
+                        activeRequests.add(request)
+                        Scheduler.scheduleDelayedTask(100) {
+                            activeRequests.remove(request)
+                            request.initiator.sendMessage(
+                                Text.literal("Your teleport request to " + request.destination.entityName + " has timed out!")
+                                    .formatted(Formatting.RED), false
+                            )
+                            request.destination.sendMessage(
+                                Text.literal("Teleport request from " + request.source.entityName + " has timed out!")
+                                    .formatted(Formatting.RED), false
+                            )
+                        }
 
                         target.sendMessage(
                             Text.literal(player.name.string).formatted(Formatting.GREEN).append(
@@ -56,13 +89,13 @@ object JustTeleportMod : ModInitializer {
 
                         return@executes 1
                     }
-            )
+            ))
 
 
             // tpaccept
             dispatcher.register(
                 CommandManager.literal("tpaccept").requires(::isPlayer)
-                    .requires(PermUtils.require("just_teleport.tpa", true))
+                    .requires(PermUtils.require("omniteleport.tpaccept", true))
                     .executes { context ->
 
 

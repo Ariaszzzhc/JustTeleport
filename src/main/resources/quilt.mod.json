@@ -2,10 +2,10 @@
   "schema_version": 1,
   "quilt_loader": {
     "group": "com.hiarias",
-    "id": "just_teleport",
+    "id": "omniteleport",
     "version": "${version}",
     "metadata": {
-      "name": "Just Teleport",
+      "name": "OmniTeleport",
       "description": "A server-side mod provides tp commands.",
       "contributors": {
         "Ariaszzzhc": "Owner"
@@ -15,13 +15,13 @@
         "issues": "https://github.com/QuiltMC/quilt-kotlin-template-mod/issues",
         "sources": "https://github.com/QuiltMC/quilt-kotlin-template-mod"
       },
-      "icon": "assets/just_teleport/icon.png"
+      "icon": "assets/omniteleport/icon.png"
     },
     "intermediate_mappings": "net.fabricmc:intermediary",
     "entrypoints": {
       "init": {
         "adapter": "kotlin",
-        "value": "com.hiarias.just_teleport.JustTeleportMod"
+        "value": "com.hiarias.omniteleport.OmniTeleport"
       }
     },
     "depends": [

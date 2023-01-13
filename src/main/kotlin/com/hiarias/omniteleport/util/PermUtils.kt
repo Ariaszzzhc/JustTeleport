@@ -1,4 +1,4 @@
-package com.hiarias.just_teleport.util
+package com.hiarias.omniteleport.util
 
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.minecraft.server.command.ServerCommandSource
